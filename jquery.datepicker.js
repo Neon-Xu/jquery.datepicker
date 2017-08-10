@@ -12,8 +12,28 @@ define(['jquery', 'moment', 'template'],function($, moment, template) {
             return num;
         }
     }
+    function IE8FixedDate(dateStr) {
+        if(typeof dateStr == 'object')
+            return dateStr;
+        else if(typeof dateStr == 'string' && !isNaN(new Date(dateStr)))
+            return new Date(dateStr);
+
+        var isoExp = /^\s*(\d{4})-(\d\d)-(\d\d)\s*$/;//正则
+        var date = new Date(NaN);
+        var parts = isoExp.exec(dateStr);//正则验证
+        if(parts) {
+            var month = Number(parts[2]);
+            //设置时间
+            date.setFullYear(parts[1], month - 1, parts[3]);
+            //判断是否正确
+            if(month != date.getMonth() + 1) {
+                date.setTime(NaN);
+            }
+        }
+        return date;
+    }
     function siblingMonth(date, director) {
-        if(typeof date == 'string') date = new Date(date);
+        if(typeof date == 'string') date = IE8FixedDate(date);
         var iYear = date.getFullYear(); // 当前年
         var iMonth = date.getMonth() + director; // 当前月
         return new Date(iYear, iMonth, 1);
@@ -42,7 +62,7 @@ define(['jquery', 'moment', 'template'],function($, moment, template) {
         if(!date)
             date = new Date;
         else if(typeof date == 'string')
-            date = new Date(date);
+            date = IE8FixedDate(date);
         var y = date.getFullYear(), m = date.getMonth(), d = date.getDate();
         return new Date(y,m,d);
     }
@@ -250,7 +270,7 @@ define(['jquery', 'moment', 'template'],function($, moment, template) {
     DatePicker.prototype.createDays = function(next) {
 
         var cdate = this.currentDate;
-        if(typeof cdate == 'string') cdate = new Date(cdate);
+        if(typeof cdate == 'string') cdate = IE8FixedDate(cdate);
         if(next) {
             cdate = siblingMonth(this.currentDate, 1);
         }
@@ -316,7 +336,7 @@ define(['jquery', 'moment', 'template'],function($, moment, template) {
 
     DatePicker.prototype.render = function () {
         var cDate = this.currentDate;
-        if(typeof cDate == 'string') cDate = new Date(cDate);
+        if(typeof cDate == 'string') cDate = IE8FixedDate(cDate);
         this.year = cDate.getFullYear();
         this.month = cDate.getMonth();
         this.container.empty();
@@ -345,10 +365,11 @@ define(['jquery', 'moment', 'template'],function($, moment, template) {
         this.container.hide();
     }
     DatePicker.prototype.setRangeHover = function(start, end) {
-        var startDate = new Date(start)*1, endDate = new Date(end)*1;
+        var startDate = IE8FixedDate(start)*1, endDate = IE8FixedDate(end)*1;
         var TDs = this.container.find('td'), len = TDs.length;
         for(var i=0;i<len;i++) {
-            var mills = new Date(TDs[i].getAttribute('data-date'))*1;
+            if(!TDs[i].getAttribute('data-date')) continue;
+            var mills = IE8FixedDate(TDs[i].getAttribute('data-date'))*1;
             if(mills >= startDate && mills <= endDate){
                 $(TDs[i]).addClass(HOVERCLASS);
             } else {
